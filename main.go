@@ -7,9 +7,12 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
+	"strconv"
+	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/nfnt/resize"
 )
@@ -20,6 +23,7 @@ var outputFilesPath string
 var offsetX int
 var offsetY int
 var heightPercentage int
+var outputSizes string
 
 func main() {
 	flag.StringVar(&watermarkPath, "watermark", "watermark.png", "Path and file of the watermark (must be .png)")
@@ -28,6 +32,7 @@ func main() {
 	flag.IntVar(&offsetX, "offset_x", 0, "Distance of the watermark to the left side of the image")
 	flag.IntVar(&offsetY, "offset_y", 0, "Distance of the watermark to the bottom side of the image")
 	flag.IntVar(&heightPercentage, "height_percentage", 10, "Percentage of the height of the watermark (relative to the image it is placed on)")
+	flag.StringVar(&outputSizes, "output_sizes", "source", "List of sizes in which the output images are stored (width in pixels) separated by comma. Special value: source")
 	flag.Parse()
 
 	log.Printf("reading file of watermark at %q\n", watermarkPath)
@@ -47,10 +52,33 @@ func main() {
 		log.Fatalf("failed to get all files of input directory: %v\n", err)
 	}
 
-	log.Printf("creating output directory at %q\n", outputFilesPath)
-	err = os.MkdirAll(outputFilesPath, os.ModePerm)
-	if err != nil {
-		log.Fatalf("failed to create output directory: %v\n", err)
+	var sizes = map[string]uint{}
+	log.Println("parsing output size values (-output_sizes)")
+	for _, size := range strings.Split(strings.ReplaceAll(outputSizes, " ", ""), ",") {
+		if size == "source" {
+			sizes["source"] = 0
+		}
+		if size == "" || size == "source" {
+			continue
+		}
+		s, err := strconv.ParseUint(size, 10, 64)
+		if err != nil {
+			log.Fatalf("failed to parse value of flag -output_sizes (must be number):%v\n", err)
+		}
+		sizes[size] = uint(s)
+	}
+
+	if len(sizes) == 0 {
+		log.Fatalf("Need output file sizes (flag: -output_sizes)")
+	}
+
+	log.Printf("creating output directories at %q\n", outputFilesPath)
+	for sizeName := range sizes {
+		log.Printf(" >%s", path.Join(outputFilesPath, sizeName))
+		err = os.MkdirAll(path.Join(outputFilesPath, sizeName), os.ModePerm)
+		if err != nil {
+			log.Fatalf("failed to create output directory: %v\n", err)
+		}
 	}
 
 	log.Println("generating watermarked images")
@@ -84,17 +112,31 @@ func main() {
 				Y: bounds.Dy() - waterMarkForThisImage.Bounds().Dy() - offsetY,
 			}), waterMarkForThisImage, image.Point{}, draw.Over)
 
-			outputImage, err := os.Create(path.Join(outputFilesPath, file.Name()))
-			if err != nil {
-				log.Fatalf("failed to create output file: %v\n", err)
-			}
-			err = jpeg.Encode(outputImage, watermarkedImage, &jpeg.Options{Quality: 100})
-			if err != nil {
-				log.Fatalf("failed to encode output: %v\n", err)
-			}
-			outputImage.Close()
+			outputFile(file.Name(), watermarkedImage, sizes)
 			watermarkedImageCount++
 		}
 	}
 	log.Printf("watermarked %d images with %q", watermarkedImageCount, watermarkPath)
+}
+
+func outputFile(outputFile string, image *image.RGBA, sizes map[string]uint) {
+	for sizeName, size := range sizes {
+		log.Printf("  >width: %s\n", sizeName)
+		outputImage, err := os.Create(path.Join(outputFilesPath, sizeName, outputFile))
+		if err != nil {
+			log.Warnf("failed to create output file: %v\n", err)
+			continue
+		}
+		if sizeName == "default" {
+			err = jpeg.Encode(outputImage, image, &jpeg.Options{Quality: 100})
+		} else {
+			imageInNewSize := resize.Resize(size, 0, image, resize.Lanczos3)
+			err = jpeg.Encode(outputImage, imageInNewSize, &jpeg.Options{Quality: 100})
+		}
+
+		if err != nil {
+			log.Warnf("failed to encode output: %v\n", err)
+		}
+		outputImage.Close()
+	}
 }

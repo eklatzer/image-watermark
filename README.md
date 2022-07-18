@@ -16,6 +16,8 @@ Flags:
         Distance of the watermark to the bottom side of the image
   -output string
         Path for the images with watermark (default "./out")
+  -output_sizes string
+        List of sizes in which the output images are stored (width in pixels) separated by comma. Special value: source (default "source")
   -watermark string
         Path and file of the watermark (must be .png) (default "watermark.png")
 ```
@@ -37,10 +39,10 @@ Folder structure:
 ```
 
 ```
-./image-watermark -offset_x=60 -offset_y=60 -height_percentage=10
+./image-watermark -offset_x=60 -offset_y=60 -height_percentage=10 -output_sizes="source,1920,3000"
 ```
 
-Generates the new folder `out` with all watermarked images:
+Generates the new folder `out` with all watermarked images in the various width's:
 ```
 .
 ├── image-watermark
@@ -53,13 +55,30 @@ Generates the new folder `out` with all watermarked images:
 │   ├── IMG_8629.JPG
 │   └── IMG_8728.JPG
 ├── out
-│   ├── IMG_8265.JPG
-│   ├── IMG_8297.JPG
-│   ├── IMG_8345.JPG
-│   ├── IMG_8405.JPG
-│   ├── IMG_8416.JPG
-│   ├── IMG_8629.JPG
-│   └── IMG_8728.JPG
+│   ├── 1920
+│   │   ├── IMG_8265.JPG
+│   │   ├── IMG_8297.JPG
+│   │   ├── IMG_8345.JPG
+│   │   ├── IMG_8405.JPG
+│   │   ├── IMG_8416.JPG
+│   │   ├── IMG_8629.JPG
+│   │   └── IMG_8728.JPG
+│   ├── 3000
+│   │   ├── IMG_8265.JPG
+│   │   ├── IMG_8297.JPG
+│   │   ├── IMG_8345.JPG
+│   │   ├── IMG_8405.JPG
+│   │   ├── IMG_8416.JPG
+│   │   ├── IMG_8629.JPG
+│   │   └── IMG_8728.JPG
+│   └── source
+│       ├── IMG_8265.JPG
+│       ├── IMG_8297.JPG
+│       ├── IMG_8345.JPG
+│       ├── IMG_8405.JPG
+│       ├── IMG_8416.JPG
+│       ├── IMG_8629.JPG
+│       └── IMG_8728.JPG
 └── watermark.png
 ```
 
