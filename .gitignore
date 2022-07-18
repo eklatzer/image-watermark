@@ -1,0 +1,12 @@
+# IDE
+.idea/
+
+# Binaries
+bin/
+image-watermark
+*.exe
+
+# Folders
+out/
+in/
+
