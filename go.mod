@@ -1,4 +1,4 @@
-module image-whitelabel
+module image-watermark
 
 go 1.16
 
