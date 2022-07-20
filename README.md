@@ -10,6 +10,8 @@ Flags:
         Percentage of the height of the watermark (relative to the image it is placed on) (default 10)
   -input string
         Path to the folder containing the input files (must be .jpg) (default "./in")
+  -jpeg_quality int
+        Quality of the output image (ranges from 1 to 100 inclusive, higher is better) (default 85)
   -offset_x int
         Distance of the watermark to the left side of the image
   -offset_y int
