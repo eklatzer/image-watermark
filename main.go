@@ -24,6 +24,7 @@ var offsetX int
 var offsetY int
 var heightPercentage int
 var outputSizes string
+var jpegQuality int
 
 func main() {
 	flag.StringVar(&watermarkPath, "watermark", "watermark.png", "Path and file of the watermark (must be .png)")
@@ -33,6 +34,7 @@ func main() {
 	flag.IntVar(&offsetY, "offset_y", 0, "Distance of the watermark to the bottom side of the image")
 	flag.IntVar(&heightPercentage, "height_percentage", 10, "Percentage of the height of the watermark (relative to the image it is placed on)")
 	flag.StringVar(&outputSizes, "output_sizes", "source", "List of sizes in which the output images are stored (width in pixels) separated by comma. Special value: source")
+	flag.IntVar(&jpegQuality, "jpeg_quality", 85, "Quality of the output image (ranges from 1 to 100 inclusive, higher is better)")
 	flag.Parse()
 
 	log.Printf("reading file of watermark at %q\n", watermarkPath)
@@ -127,12 +129,8 @@ func outputFile(outputFile string, image *image.RGBA, sizes map[string]uint) {
 			log.Warnf("failed to create output file: %v\n", err)
 			continue
 		}
-		if sizeName == "default" {
-			err = jpeg.Encode(outputImage, image, &jpeg.Options{Quality: 100})
-		} else {
-			imageInNewSize := resize.Resize(size, 0, image, resize.Lanczos3)
-			err = jpeg.Encode(outputImage, imageInNewSize, &jpeg.Options{Quality: 100})
-		}
+		imageInNewSize := resize.Resize(size, 0, image, resize.Lanczos3)
+		err = jpeg.Encode(outputImage, imageInNewSize, &jpeg.Options{Quality: jpegQuality})
 
 		if err != nil {
 			log.Warnf("failed to encode output: %v\n", err)
